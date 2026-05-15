@@ -58,7 +58,7 @@ export async function POST(
   if (
     !Array.isArray(notify_days) ||
     notify_days.length === 0 ||
-    !notify_days.every((d) => Number.isInteger(d) && d > 0)
+    !notify_days.every((d) => Number.isInteger(d) && d >= 0)
   ) {
     return NextResponse.json(
       { error: "notify_days must be a non-empty array of positive integers" },

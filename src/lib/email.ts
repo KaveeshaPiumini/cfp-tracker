@@ -108,6 +108,7 @@ export async function sendMail(opts: {
         await waitFor(secured, "235");
 
         // Envelope
+        console.log("[email] Sending envelope...");
         send(secured, `MAIL FROM:<${SMTP_FROM}>`);
         await waitFor(secured, "250");
         send(secured, `RCPT TO:<${opts.to}>`);
@@ -141,11 +142,13 @@ export async function sendMail(opts: {
         send(secured, msg);
         await waitFor(secured, "250");
 
+        console.log("[email] Message sent successfully to", opts.to);
         send(secured, "QUIT");
         secured.destroy();
         plain.destroy();
         resolve();
       } catch (err) {
+        console.error("[email] SMTP Error:", err);
         plain.destroy();
         reject(err);
       }

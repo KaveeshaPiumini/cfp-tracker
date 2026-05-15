@@ -33,7 +33,9 @@ export default function SubscribeButton({ cfpId, isLoggedIn, deadline, compact =
   const [customInput, setCustomInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sendingNow, setSendingNow] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoggedIn) { setLoading(false); return; }
@@ -72,7 +74,7 @@ export default function SubscribeButton({ cfpId, isLoggedIn, deadline, compact =
 
   function addCustomDay() {
     const d = parseInt(customInput);
-    if (isNaN(d) || d < 1 || d > 365) return;
+    if (isNaN(d) || d < 0 || d > 365) return;
     if (d > daysLeft) {
       setError(`Cannot set a reminder for ${d} days before (only ${daysLeft} days remaining)`);
       return;
@@ -105,6 +107,22 @@ export default function SubscribeButton({ cfpId, isLoggedIn, deadline, compact =
     }
   }
 
+  async function sendNow() {
+    setSendingNow(true);
+    setSuccess(null);
+    setError(null);
+    try {
+      const res = await fetch(`/api/cfps/${cfpId}/notify-me-now`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed to send email");
+      setSuccess("Email sent! Check your inbox.");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSendingNow(false);
+    }
+  }
+
   async function unsubscribe() {
     setSaving(true);
     try {
@@ -128,17 +146,18 @@ export default function SubscribeButton({ cfpId, isLoggedIn, deadline, compact =
           style={compact ? {
             display: "inline-flex", alignItems: "center", gap: 6,
             fontSize: 12, padding: "4px 10px", borderRadius: 99,
-            background: subscribed ? "var(--success-bg, #dcfce7)" : undefined,
-            color: subscribed ? "var(--success-text, #166534)" : undefined,
-            border: subscribed ? "1px solid var(--success-border, #bbf7d0)" : undefined,
+            background: subscribed ? "rgba(16, 185, 129, 0.15)" : undefined,
+            color: subscribed ? "#34d399" : undefined,
+            border: subscribed ? "1px solid rgba(16, 185, 129, 0.3)" : undefined,
           } : {
             display: "inline-flex", alignItems: "center", gap: 8,
-            background: subscribed ? "var(--success-bg, #dcfce7)" : undefined,
-            color: subscribed ? "var(--success-text, #166534)" : undefined,
-            border: subscribed ? "1px solid var(--success-border, #bbf7d0)" : undefined,
+            background: subscribed ? "rgba(16, 185, 129, 0.15)" : undefined,
+            color: subscribed ? "#34d399" : undefined,
+            border: subscribed ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid var(--border)",
+            fontWeight: subscribed ? 700 : 500
           }}
         >
-          {subscribed ? `✅ ${compact ? "Subscribed" : "Subscribed"}` : `🔔 ${compact ? "Remind me" : "Subscribe for reminders"}`}
+          {subscribed ? "🔔 Subscribed" : "🔔 Remind me"}
           {subscribed && !compact && (
             <span style={{ fontSize: 12, opacity: 0.75 }}>
               ({currentDays.sort((a,b)=>a-b).map(d => d === 30 ? "1mo" : d === 14 ? "2wk" : d === 7 ? "1wk" : `${d}d`).join(", ")} before)
@@ -198,43 +217,38 @@ export default function SubscribeButton({ cfpId, isLoggedIn, deadline, compact =
                 ×
               </button>
             </div>
-
-            {/* Preset grid */}
+                   {/* Preset grid - Simplified to most common */}
             <p style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>
-              Remind me:
+              Quick select:
             </p>
             <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
+              display: "flex",
+              flexWrap: "wrap",
               gap: "8px",
               marginBottom: 24
             }}>
-              {PRESET_OPTIONS.map((opt) => {
-                const active = selectedDays.includes(opt.days);
-                const isPassed = opt.days > daysLeft;
-                const shortLabel = opt.label.replace(" before", "");
+              {[1, 3, 7, 14].map((days) => {
+                const active = selectedDays.includes(days);
+                const isPassed = days > daysLeft;
                 
                 return (
                   <button
-                    key={opt.days}
-                    onClick={() => toggleDay(opt.days)}
+                    key={days}
+                    onClick={() => toggleDay(days)}
                     disabled={isPassed}
-                    title={isPassed ? `This day has already passed (${daysLeft} days left)` : ""}
                     style={{
-                      padding: "10px 4px",
+                      padding: "8px 16px",
                       borderRadius: 8,
-                      border: `1px solid ${active ? "var(--accent)" : "rgba(255,255,255,0.1)"}`,
+                      border: `1px solid ${active ? "rgba(99, 102, 241, 0.5)" : "rgba(255,255,255,0.1)"}`,
                       background: active ? "rgba(99, 102, 241, 0.2)" : "rgba(255,255,255,0.03)",
                       color: active ? "#818cf8" : isPassed ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.7)",
                       cursor: isPassed ? "not-allowed" : "pointer",
-                      opacity: isPassed ? 0.4 : 1,
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: active ? 600 : 500,
                       transition: "all 0.2s ease",
-                      textAlign: "center",
                     }}
                   >
-                    {shortLabel}
+                    {days} day{days > 1 ? "s" : ""}
                   </button>
                 );
               })}
@@ -242,99 +256,146 @@ export default function SubscribeButton({ cfpId, isLoggedIn, deadline, compact =
 
             {/* Custom input */}
             <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>
-              Custom (days):
+              Custom days:
             </p>
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
               <input
                 type="number"
-                min={1}
+                min={0}
                 max={365}
                 value={customInput}
                 onChange={(e) => setCustomInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addCustomDay()}
-                placeholder="e.g. 45"
+                placeholder="e.g. 10"
                 className="form-input"
                 style={{
                   flex: 1,
                   padding: "10px 14px",
                   fontSize: 14,
-                  background: "rgba(255,255,255,0.05)",
+                  background: "rgba(255,255,255,0.03)",
                   border: "1px solid rgba(255,255,255,0.1)",
                   color: "white",
                   borderRadius: 8
                 }}
-                id="subscribe-custom-days"
               />
               <button
                 onClick={addCustomDay}
-                className="btn btn-secondary btn-sm"
-                style={{ flexShrink: 0, padding: "0 16px" }}
+                style={{
+                  padding: "0 16px",
+                  borderRadius: 8,
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(255,255,255,0.05)",
+                  color: "white",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: "pointer"
+                }}
               >
                 + Add
               </button>
             </div>
 
-            {/* Selected summary */}
-            {selectedDays.length > 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 24 }}>
-                {selectedDays.map((d) => (
-                  <span
-                    key={d}
-                    style={{
-                      display: "inline-flex", alignItems: "center", gap: 4,
-                      background: "rgba(99, 102, 241, 0.15)",
-                      color: "#818cf8",
-                      borderRadius: 99,
-                      padding: "4px 12px",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      border: "1px solid rgba(99, 102, 241, 0.2)",
-                    }}
-                  >
-                    {d === 30 ? "1 month" : d === 14 ? "2 weeks" : d === 7 ? "1 week" : `${d} day${d === 1 ? "" : "s"}`} before
-                    <button
-                      onClick={() => toggleDay(d)}
-                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: 18, lineHeight: 1, color: "#818cf8", marginLeft: 4 }}
-                      aria-label={`Remove ${d} days`}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
+            {/* Selected Tags */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24, minHeight: 32 }}>
+              {selectedDays.map(days => (
+                <div key={days} className="badge badge-purple" style={{ 
+                  textTransform: "none", 
+                  padding: "6px 10px",
+                  fontSize: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  background: "rgba(99, 102, 241, 0.15)",
+                  border: "1px solid rgba(99, 102, 241, 0.3)"
+                }}>
+                  {days === 0 ? "On the day" : `${days} day${days > 1 ? "s" : ""} before`}
+                  <span 
+                    onClick={() => toggleDay(days)}
+                    style={{ cursor: "pointer", opacity: 0.6, fontWeight: 700 }}
+                  >×</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Error/Success messages */}
+            {success && (
+              <div style={{ marginBottom: 16, color: "#10b981", fontSize: 13, textAlign: "center", fontWeight: 500 }}>
+                {success}
+              </div>
+            )}
+            {error && (
+              <div style={{ marginBottom: 16, color: "#ef4444", fontSize: 13, textAlign: "center" }}>
+                ⚠️ {error}
               </div>
             )}
 
-            {error && (
-              <p style={{ color: "#ef4444", fontSize: 13, margin: "0 0 16px" }}>
-                ⚠️ {error}
-              </p>
-            )}
-
-            {/* Actions */}
-            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 20 }}>
-              {subscribed && (
+            {/* Footer Actions - Unified */}
+            <div style={{ 
+              marginTop: 12, 
+              paddingTop: 20, 
+              borderTop: "1px solid rgba(255,255,255,0.05)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}>
+              {subscribed ? (
                 <button
                   onClick={unsubscribe}
-                  className="btn btn-secondary btn-sm"
                   disabled={saving}
-                  style={{ color: "#ef4444", borderColor: "rgba(239,68,68,0.2)" }}
-                  id="unsubscribe-btn"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#ef4444",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    padding: "8px 0",
+                    opacity: saving ? 0.5 : 1
+                  }}
                 >
-                  {saving ? "..." : "Unsubscribe"}
+                  Unsubscribe
                 </button>
+              ) : (
+                <div /> /* spacer */
               )}
-              <button onClick={() => setShowModal(false)} className="btn btn-secondary btn-sm" disabled={saving}>
-                Cancel
-              </button>
-              <button
-                onClick={save}
-                className="btn btn-primary btn-sm"
-                disabled={saving || selectedDays.length === 0}
-                style={{ padding: "8px 20px" }}
-                id="subscribe-save-btn"
-              >
-                {saving ? "Saving…" : subscribed ? "Update" : "Subscribe"}
-              </button>
+              <div style={{ display: "flex", gap: 12 }}>
+                <button
+                  onClick={sendNow}
+                  disabled={sendingNow}
+                  style={{
+                    padding: "10px 16px",
+                    borderRadius: 8,
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(255,255,255,0.05)",
+                    color: "white",
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: sendingNow ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6
+                  }}
+                >
+                  {sendingNow ? "..." : "✉️ Send Now"}
+                </button>
+                <button
+                  onClick={save}
+                  disabled={saving}
+                  style={{
+                    padding: "10px 24px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "linear-gradient(135deg, #4f46e5, #6366f1)",
+                    color: "white",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: saving ? "not-allowed" : "pointer",
+                    boxShadow: "0 4px 12px rgba(79, 70, 229, 0.3)"
+                  }}
+                >
+                  {saving ? "Saving..." : subscribed ? "Save Changes" : "Confirm"}
+                </button>
+              </div>
             </div>
           </div>
         </div>,

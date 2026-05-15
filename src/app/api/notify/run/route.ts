@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         location,
         is_virtual,
         url,
-        category,
+        categories,
         tags,
         submitted_by,
         created_at
