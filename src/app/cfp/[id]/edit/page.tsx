@@ -34,7 +34,7 @@ export default async function EditCFPPage({
     location: cfp.location ?? "",
     is_virtual: cfp.is_virtual,
     url: cfp.url ?? "",
-    category: cfp.category,
+    categories: cfp.categories,
     tags: cfp.tags,
   };
 

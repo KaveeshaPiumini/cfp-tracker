@@ -56,6 +56,9 @@ export default function Header() {
 
         {/* Actions */}
         <div className="header-actions">
+          <div style={{ marginRight: 12, borderRight: "1px solid var(--border)", paddingRight: 12, display: "flex", alignItems: "center" }}>
+            <ThemeToggle />
+          </div>
           {loading ? (
             <div className="skeleton" style={{ width: 120, height: 36, borderRadius: 99 }} />
           ) : user ? (
@@ -76,26 +79,17 @@ export default function Header() {
                   {displayName}
                 </span>
               </div>
-              <Link href="/cfp/new" className="btn btn-primary btn-sm">
-                + Add CFP
-              </Link>
               <a href="/api/auth/logout" className="btn btn-secondary btn-sm">
                 Sign Out
               </a>
             </>
           ) : (
             <>
-              <Link href="/cfp/new" className="btn btn-secondary btn-sm">
-                + Add CFP
-              </Link>
               <a href="/api/auth/login" className="btn btn-primary btn-sm">
                 Sign In
               </a>
             </>
           )}
-          <div style={{ marginLeft: 12, borderLeft: "1px solid var(--border)", paddingLeft: 12, display: "flex", alignItems: "center" }}>
-            <ThemeToggle />
-          </div>
         </div>
       </div>
     </header>

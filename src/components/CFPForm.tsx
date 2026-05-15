@@ -31,11 +31,12 @@ export default function CFPForm({
       location: "",
       is_virtual: false,
       url: "",
-      category: "Identity & Access Management",
+      categories: [],
       tags: [],
     }
   );
   const [tagInput, setTagInput] = useState("");
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [internalSubmitting, setInternalSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -146,23 +147,120 @@ export default function CFPForm({
               />
             </div>
 
-            {/* Category */}
-            <div className="form-group">
+            {/* Categories */}
+            <div className="form-group" style={{ position: "relative" }}>
               <label className="form-label">
-                Category <span className="required">*</span>
+                Categories <span className="required">*</span>
               </label>
-              <select
-                className="form-select"
-                value={form.category}
-                onChange={(e) => set("category", e.target.value as CfpCategory)}
-                required
+              
+              {/* Dropdown Trigger */}
+              <div 
+                onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                className="form-input"
+                style={{ 
+                  minHeight: 46, 
+                  height: "auto", 
+                  display: "flex", 
+                  flexWrap: "wrap", 
+                  gap: 6, 
+                  padding: "8px 12px",
+                  cursor: "pointer",
+                  paddingRight: 40,
+                  position: "relative",
+                  alignItems: "center"
+                }}
               >
-                {CFP_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+                {form.categories.length === 0 ? (
+                  <span style={{ color: "var(--text-muted)" }}>Select categories…</span>
+                ) : (
+                  form.categories.map(cat => (
+                    <span key={cat} className="badge badge-purple" style={{ 
+                      textTransform: "none", 
+                      fontSize: 12, 
+                      padding: "2px 10px",
+                      background: "var(--accent-glow)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6
+                    }}>
+                      {cat}
+                      <span 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          set("categories", form.categories.filter(c => c !== cat));
+                        }}
+                        style={{ cursor: "pointer", opacity: 0.7, fontSize: 14, fontWeight: 700 }}
+                      >×</span>
+                    </span>
+                  ))
+                )}
+                <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", opacity: 0.5 }}>
+                  {showCategoryDropdown ? "▲" : "▼"}
+                </span>
+              </div>
+
+              {/* Dropdown Menu */}
+              {showCategoryDropdown && (
+                <>
+                  <div 
+                    style={{ position: "fixed", inset: 0, zIndex: 998 }} 
+                    onClick={() => setShowCategoryDropdown(false)} 
+                  />
+                  <div style={{ 
+                    position: "absolute", 
+                    top: "calc(100% + 4px)", 
+                    left: 0, 
+                    right: 0, 
+                    zIndex: 999, 
+                    background: "#1e293b", 
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+                    maxHeight: 300,
+                    overflowY: "auto",
+                    padding: 8
+                  }}>
+                    {CFP_CATEGORIES.map((cat) => {
+                      const active = (form.categories ?? []).includes(cat);
+                      return (
+                        <div
+                          key={cat}
+                          onClick={() => {
+                            const next = active 
+                              ? form.categories.filter(c => c !== cat)
+                              : [...form.categories, cat];
+                            set("categories", next);
+                          }}
+                          style={{ 
+                            padding: "10px 12px",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            fontSize: 14,
+                            background: active ? "rgba(59, 130, 246, 0.1)" : "transparent",
+                            color: active ? "var(--accent-light)" : "var(--text-secondary)",
+                            transition: "all 0.15s"
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = active ? "rgba(59, 130, 246, 0.15)" : "rgba(255,255,255,0.05)"}
+                          onMouseLeave={(e) => e.currentTarget.style.background = active ? "rgba(59, 130, 246, 0.1)" : "transparent"}
+                        >
+                          <div style={{ 
+                            width: 18, height: 18, borderRadius: 4, 
+                            border: `2px solid ${active ? "var(--accent)" : "rgba(255,255,255,0.2)"}`,
+                            background: active ? "var(--accent)" : "transparent",
+                            display: "flex", alignItems: "center", justifyContent: "center"
+                          }}>
+                            {active && <span style={{ color: "white", fontSize: 12, fontWeight: 800 }}>✓</span>}
+                          </div>
+                          {cat}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Deadline + Location */}

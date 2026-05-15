@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
+import SubscribeButton from "@/components/SubscribeButton";
 import { getCategoryClass, formatDate, daysUntil } from "@/lib/utils";
 import { getSessionUser } from "@/lib/session";
 import type { CFP } from "@/lib/types";
@@ -28,8 +29,7 @@ export default async function CFPDetailPage({
   const isOwner = user && cfp.submitted_by === user.sub;
 
   const days = daysUntil(cfp.deadline);
-  const catClass = getCategoryClass(cfp.category);
-
+  
   const deadlineChip = () => {
     if (days < 0)
       return { label: "Expired", cls: "badge badge-muted" };
@@ -64,24 +64,31 @@ export default async function CFPDetailPage({
             ← Back to all CFPs
           </Link>
 
-          {isOwner && (
-            <Link
-              href={`/cfp/${id}/edit`}
-              className="btn btn-secondary btn-sm"
-              style={{ padding: "6px 12px", gap: 6 }}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M10.5 1.5l2 2L4 12H2v-2l8.5-8.5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Edit CFP
-            </Link>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <SubscribeButton cfpId={id} isLoggedIn={!!user} deadline={cfp.deadline} />
+            {isOwner && (
+              <Link
+                href={`/cfp/${id}/edit`}
+                className="btn btn-secondary btn-sm"
+                style={{ padding: "6px 12px", gap: 6 }}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M10.5 1.5l2 2L4 12H2v-2l8.5-8.5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Edit CFP
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* Header */}
         <div className="detail-header">
           <div className="detail-meta">
-            <span className={catClass}>{cfp.category}</span>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {(cfp.categories ?? []).map(cat => (
+                <span key={cat} className="badge badge-purple">{cat}</span>
+              ))}
+            </div>
             <span className={chip.cls}>
               📅 {chip.label}
             </span>
@@ -120,8 +127,12 @@ export default async function CFPDetailPage({
               </span>
             </div>
             <div className="detail-info-item">
-              <span className="detail-info-label">Category</span>
-              <span className="detail-info-value">{cfp.category}</span>
+              <span className="detail-info-label">Categories</span>
+              <div className="detail-info-value" style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                {(cfp.categories ?? []).map(cat => (
+                  <span key={cat} className="badge badge-muted" style={{ fontSize: 10 }}>{cat}</span>
+                ))}
+              </div>
             </div>
             <div className="detail-info-item">
               <span className="detail-info-label">Submitted</span>
@@ -154,9 +165,10 @@ export default async function CFPDetailPage({
           </div>
         )}
 
+
         {/* CTA */}
         {cfp.url && (
-          <div style={{ marginTop: 24 }}>
+          <div style={{ marginTop: 16 }}>
             <a
               href={cfp.url}
               target="_blank"

@@ -61,7 +61,7 @@ export async function PATCH(
       location: body.location,
       is_virtual: body.is_virtual,
       url: body.url,
-      category: body.category,
+      categories: body.categories,
       tags: body.tags,
     })
     .eq("id", id)

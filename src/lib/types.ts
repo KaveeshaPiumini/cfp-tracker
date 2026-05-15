@@ -27,7 +27,7 @@ export interface CFP {
   location: string | null;
   is_virtual: boolean;
   url: string | null;
-  category: CfpCategory;
+  categories: CfpCategory[];
   tags: string[];
   submitted_by: string | null;
   created_at: string;
@@ -41,7 +41,7 @@ export interface CFPFormData {
   location?: string;
   is_virtual: boolean;
   url?: string;
-  category: CfpCategory;
+  categories: CfpCategory[];
   tags: string[];
 }
 
@@ -57,4 +57,13 @@ export interface SessionUser {
 export interface SessionData {
   user?: SessionUser;
   accessToken?: string;
+}
+
+export interface CfpSubscription {
+  id: string;
+  cfp_id: string;
+  user_id: string;
+  user_email: string;
+  notify_days: number[];
+  created_at: string;
 }

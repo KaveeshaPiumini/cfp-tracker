@@ -3,6 +3,7 @@ import type { SessionUser } from "./types";
 
 const THUNDER_BASE_URL = process.env.THUNDER_BASE_URL!;
 const CLIENT_ID = process.env.THUNDER_CLIENT_ID!;
+const CLIENT_SECRET = process.env.THUNDER_CLIENT_SECRET!;
 const REDIRECT_URI = process.env.THUNDER_REDIRECT_URI!;
 
 // Remote JWK Set fetched from Thunder's JWKS endpoint
@@ -80,9 +81,18 @@ export async function exchangeCodeForTokens(
     code_verifier: codeVerifier,
   });
 
+  const headers: HeadersInit = {
+    "Content-Type": "application/x-www-form-urlencoded",
+  };
+
+  if (CLIENT_SECRET) {
+    const basicAuth = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
+    headers["Authorization"] = `Basic ${basicAuth}`;
+  }
+
   const response = await fetch(`${THUNDER_BASE_URL}/oauth2/token`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers,
     body: body.toString(),
   });
 
@@ -117,6 +127,28 @@ export async function verifyIdToken(idToken: string): Promise<SessionUser> {
     family_name: (payload.family_name ?? payload.last_name ?? payload.lastName) as string | undefined,
     picture: payload.picture as string | undefined,
   };
+}
+
+// ─── UserInfo ─────────────────────────────────────────────────────────────────
+
+export async function fetchUserInfo(accessToken: string): Promise<Partial<SessionUser>> {
+  try {
+    const response = await fetch(`${THUNDER_BASE_URL}/oauth2/userinfo`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) return {};
+    const info = await response.json();
+    return {
+      sub: info.sub,
+      email: info.email ?? info.preferred_username,
+      name: info.name,
+      given_name: info.given_name ?? info.firstName ?? info.first_name,
+      family_name: info.family_name ?? info.lastName ?? info.last_name,
+      picture: info.picture,
+    };
+  } catch {
+    return {};
+  }
 }
 
 // ─── Logout URL ───────────────────────────────────────────────────────────────

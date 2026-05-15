@@ -560,8 +560,8 @@ a {
   display: flex;
   align-items: center;
   gap: 12px;
-  max-width: 640px;
-  margin: 0 auto 40px;
+  width: 100%;
+  margin: 0 0 20px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -1030,6 +1030,9 @@ a {
 
 .fade-in-up {
   animation: fadeInUp 0.4s ease forwards;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 @keyframes pulse-glow {

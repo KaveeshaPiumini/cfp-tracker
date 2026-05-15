@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   let query = supabase.from("cfps").select("*").order("deadline", { ascending: true });
 
   if (category) {
-    query = query.eq("category", category);
+    query = query.contains("categories", [category]);
   }
 
   if (isVirtual === "true") {
@@ -69,9 +69,9 @@ export async function POST(request: NextRequest) {
   }
 
   // Validation
-  if (!body.title || !body.conference_name || !body.deadline || !body.category) {
+  if (!body.title || !body.conference_name || !body.deadline || !body.categories || body.categories.length === 0) {
     return NextResponse.json(
-      { error: "Missing required fields: title, conference_name, deadline, category" },
+      { error: "Missing required fields: title, conference_name, deadline, categories" },
       { status: 400 }
     );
   }
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         location: body.location ?? null,
         is_virtual: body.is_virtual ?? false,
         url: body.url ?? null,
-        category: body.category,
+        categories: body.categories,
         tags: body.tags ?? [],
         submitted_by: user.sub,
       },
