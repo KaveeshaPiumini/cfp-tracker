@@ -201,8 +201,8 @@ export async function sendDeadlineReminderEmail(
         </tr>
         ${cfp.location ? `<tr><td style="padding: 8px 0; color: #94a3b8; font-size: 13px;">📍 Location</td><td style="padding: 8px 0; color: #1e293b; font-size: 13px;">${cfp.location}</td></tr>` : ""}
         <tr>
-          <td style="padding: 8px 0; color: #94a3b8; font-size: 13px;">🏷️ Category</td>
-          <td style="padding: 8px 0; color: #1e293b; font-size: 13px;">${cfp.category}</td>
+          <td style="padding: 8px 0; color: #94a3b8; font-size: 13px;">🏷️ Categories</td>
+          <td style="padding: 8px 0; color: #1e293b; font-size: 13px;">${(cfp.categories ?? []).join(", ")}</td>
         </tr>
       </table>
 
@@ -227,7 +227,7 @@ export async function sendDeadlineReminderEmail(
 "${cfp.title}" (${cfp.conference_name}) deadline is ${label}.
 
 Deadline: ${deadline}
-${cfp.location ? `Location: ${cfp.location}\n` : ""}Category: ${cfp.category}
+${cfp.location ? `Location: ${cfp.location}\n` : ""}Categories: ${(cfp.categories ?? []).join(", ")}
 ${cfp.description ? `\n${cfp.description}\n` : ""}
 View and submit: ${cfpUrl}
 
