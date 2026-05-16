@@ -5,12 +5,12 @@ import { sendDeadlineReminderEmail } from "@/lib/email";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "No email address found on your account" }, { status: 400 });
     }
 
     const { id } = await params;
